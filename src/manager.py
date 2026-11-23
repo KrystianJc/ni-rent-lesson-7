@@ -2,8 +2,18 @@ from src.models import Apartment, Bill, Parameters, Tenant, TenantSettlement, Tr
 from typing import List, Tuple
 
 class Manager:
-    def __init__(self, parameters: Parameters):
+    def __init__(
+        self,
+        parameters: Parameters,
+        min_transfer_pln: float = 0.0,
+        max_transfer_pln: float = 10000.0,
+    ):
+        if min_transfer_pln > max_transfer_pln:
+            raise ValueError("Minimum transfer amount cannot exceed maximum transfer amount")
+
         self.parameters = parameters 
+        self.min_transfer_pln = min_transfer_pln
+        self.max_transfer_pln = max_transfer_pln
 
         self.apartments = {}
         self.tenants = {}
@@ -11,6 +21,15 @@ class Manager:
         self.bills = []
        
         self.load_data()
+
+    def validate_transfers(self) -> List[Transfer]:
+        """Return transfers whose amounts are outside the configured range."""
+        return [
+            transfer
+            for transfer in self.transfers
+            if transfer.amount_pln < self.min_transfer_pln
+            or transfer.amount_pln > self.max_transfer_pln
+        ]
 
     def load_data(self):
         self.apartments = Apartment.from_json_file(self.parameters.apartments_json_path)
